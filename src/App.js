@@ -1,26 +1,47 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, {Component} from 'react';
+import Home from './containers/Home/Home';
+import {AppLayout} from './components/AppLayout/AppLayout';
+import {Route, Switch, withRouter} from 'react-router-dom';
+import Watch from './containers/Watch/Watch';
+import {bindActionCreators} from 'redux';
+import {connect} from 'react-redux';
+import {YoutubeLibraryLoaded} from './store/actions/api';
+import Trending from './containers/Trending/Trending';
+import Search from './containers/Search/Search';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+const API_KEY = process.env.REACT_APP_YT_API_KEY;
+
+class App extends Component {
+  componentDidMount() {
+    this.loadYoutubeApi();
+  }
+  loadYoutubeApi() {
+    const script = document.createElement('script');
+    script.src = "https://apis.google.com/js/client.js";
+    script.onload = () => {
+      window.gapi.client.setApiKey(API_KEY);
+      window.gapi.client.load('youtube', 'v3', () => {
+        this.props.youtubeLibraryLoaded();
+      })
+    }
+    document.body.appendChild(script);
+  }
+  render() {
+    return (
+      <AppLayout>
+        <Switch>
+          <Route path="/feed/trending" component={Trending}/>
+          <Route path="/results" render={()=> <Search key={this.props.location.key}/>}/>
+          <Route path="/watch" render={() => <Watch key={this.props.location.key}/>}/>
+          <Route path="/" component={Home}/>
+        </Switch>
+      </AppLayout>
+    );
+  }
 }
 
-export default App;
+function mapDispatchToProps(dispatch) {
+  return bindActionCreators({YoutubeLibraryLoaded}, dispatch);
+}
+
+export default withRouter( connect(null,mapDispatchToProps)(App));
